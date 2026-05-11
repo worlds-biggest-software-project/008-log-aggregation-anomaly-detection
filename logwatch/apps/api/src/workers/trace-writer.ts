@@ -71,7 +71,7 @@ export class TraceWriter {
     const records: TraceSpan[] = [];
     const messageIds: string[] = [];
 
-    for (const [, messages] of results) {
+    for (const [, messages] of results as [string, [string, string[]][]][]) {
       for (const [id, fields] of messages) {
         messageIds.push(id);
         const dataIdx = fields.indexOf('data');

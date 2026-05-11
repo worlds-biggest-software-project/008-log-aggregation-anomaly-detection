@@ -502,10 +502,86 @@ export default async function adminRoutes(fastify: FastifyInstance) {
   /*  Audit Log                                                         */
   /* ================================================================== */
 
-  // GET /audit-log — stub for future audit trail
+  // GET /audit-log — query the audit trail with optional filters
   fastify.get('/audit-log', {
     preHandler: requireAdmin,
-  }, async (_request, reply) => {
-    return reply.send({ data: [], message: 'Audit log not yet populated' });
+    schema: {
+      querystring: {
+        type: 'object',
+        properties: {
+          action: { type: 'string' },
+          resource_type: { type: 'string' },
+          from: { type: 'string', format: 'date-time' },
+          to: { type: 'string', format: 'date-time' },
+          limit: { type: 'integer', minimum: 1, maximum: 1000, default: 50 },
+          offset: { type: 'integer', minimum: 0, default: 0 },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { action, resource_type, from, to, limit = 50, offset = 0 } = request.query as {
+      action?: string;
+      resource_type?: string;
+      from?: string;
+      to?: string;
+      limit?: number;
+      offset?: number;
+    };
+
+    const whereClauses: string[] = ['tenant_id = $1'];
+    const params: unknown[] = [request.tenantId];
+    let paramIndex = 2;
+
+    if (action !== undefined) {
+      whereClauses.push(`action = $${paramIndex}`);
+      params.push(action);
+      paramIndex++;
+    }
+
+    if (resource_type !== undefined) {
+      whereClauses.push(`resource_type = $${paramIndex}`);
+      params.push(resource_type);
+      paramIndex++;
+    }
+
+    if (from !== undefined) {
+      whereClauses.push(`created_at >= $${paramIndex}`);
+      params.push(from);
+      paramIndex++;
+    }
+
+    if (to !== undefined) {
+      whereClauses.push(`created_at <= $${paramIndex}`);
+      params.push(to);
+      paramIndex++;
+    }
+
+    const whereSQL = whereClauses.join(' AND ');
+
+    // Get total count for pagination
+    const countResult = await fastify.pg.query(
+      `SELECT COUNT(*)::int AS total FROM audit_log WHERE ${whereSQL}`,
+      params,
+    );
+
+    // Fetch rows with limit/offset
+    params.push(limit);
+    const limitIndex = paramIndex;
+    paramIndex++;
+
+    params.push(offset);
+    const offsetIndex = paramIndex;
+
+    const result = await fastify.pg.query(
+      `SELECT * FROM audit_log WHERE ${whereSQL} ORDER BY created_at DESC LIMIT $${limitIndex} OFFSET $${offsetIndex}`,
+      params,
+    );
+
+    return reply.send({
+      data: result.rows,
+      total: countResult.rows[0].total,
+      limit,
+      offset,
+    });
   });
 }

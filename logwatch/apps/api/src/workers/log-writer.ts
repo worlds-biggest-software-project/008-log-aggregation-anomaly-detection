@@ -71,7 +71,7 @@ export class LogWriter {
     const records: OtelLogRecord[] = [];
     const messageIds: string[] = [];
 
-    for (const [, messages] of results) {
+    for (const [, messages] of results as [string, [string, string[]][]][]) {
       for (const [id, fields] of messages) {
         messageIds.push(id);
         const dataIdx = fields.indexOf('data');

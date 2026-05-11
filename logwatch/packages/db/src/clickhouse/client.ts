@@ -38,5 +38,6 @@ export async function queryWithTenant<T>(
   };
 
   const result = await client.query(queryParams);
-  return result.json<T>();
+  const json = await result.json<T>();
+  return Array.isArray(json) ? json : (json as any).data ?? [];
 }

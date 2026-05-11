@@ -216,12 +216,28 @@ export default function BaselinesPage() {
 
   /* ---- load services ---- */
   useEffect(() => {
-    // TODO: Wire up when baselines-by-service endpoint is available
-    // For now, use mock data
-    setServices(MOCK_SERVICES);
-    if (MOCK_SERVICES.length > 0) {
-      setSelectedServiceId(MOCK_SERVICES[0].id);
+    async function fetchServices() {
+      try {
+        const res = await fetch('/api/v1/services');
+        if (res.ok) {
+          const json = await res.json();
+          const loaded: Service[] = json.data ?? [];
+          if (loaded.length > 0) {
+            setServices(loaded);
+            setSelectedServiceId(loaded[0].id);
+            return;
+          }
+        }
+      } catch {
+        // API unavailable — fall through to mock data
+      }
+      // Fallback to mock data
+      setServices(MOCK_SERVICES);
+      if (MOCK_SERVICES.length > 0) {
+        setSelectedServiceId(MOCK_SERVICES[0].id);
+      }
     }
+    fetchServices();
   }, []);
 
   /* ---- load baselines when service changes ---- */
@@ -229,18 +245,23 @@ export default function BaselinesPage() {
     if (!serviceId) return;
     setLoading(true);
     try {
-      // TODO: Wire up when baselines-by-service endpoint is available
-      // const res = await fetch(`/api/v1/services/${serviceId}/baselines`);
-      // if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      // const json = await res.json();
-      // setBaselines(json.baselines ?? []);
-
-      // Mock data fallback
-      await new Promise((r) => setTimeout(r, 300));
+      const res = await fetch(`/api/v1/services/${serviceId}/baselines`);
+      if (res.ok) {
+        const json = await res.json();
+        const loaded: AnomalyBaseline[] = json.baselines ?? [];
+        if (loaded.length > 0) {
+          setBaselines(loaded);
+          setAdjustments(MOCK_ADJUSTMENTS); // adjustments still from mock until endpoint exists
+          return;
+        }
+      }
+      // API returned no data or error — fall through to mock data
       setBaselines(MOCK_BASELINES[serviceId] ?? []);
       setAdjustments(MOCK_ADJUSTMENTS);
     } catch {
-      setBaselines([]);
+      // API unavailable — use mock data
+      setBaselines(MOCK_BASELINES[serviceId] ?? []);
+      setAdjustments(MOCK_ADJUSTMENTS);
     } finally {
       setLoading(false);
     }

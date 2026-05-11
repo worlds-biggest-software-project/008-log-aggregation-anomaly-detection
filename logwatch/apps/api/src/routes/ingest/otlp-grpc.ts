@@ -2,7 +2,7 @@ import type { FastifyInstance } from 'fastify';
 
 export default async function otlpGrpcRoute(fastify: FastifyInstance) {
   // OTLP gRPC ingestion for logs and traces
-  // Requires: @grpc/grpc-js, @grpc/proto-loader
+  // Requires: @grpc/grpc-js, @grpc/proto-loader (not yet in dependencies)
   // Proto files: opentelemetry/proto/collector/logs/v1/logs_service.proto
   //              opentelemetry/proto/collector/trace/v1/trace_service.proto
   //
@@ -14,6 +14,14 @@ export default async function otlpGrpcRoute(fastify: FastifyInstance) {
   // 2. Create gRPC server with ExportLogsServiceRequest and ExportTraceServiceRequest handlers
   // 3. Convert protobuf messages to the same format as HTTP OTLP endpoints
   // 4. Feed into the same Redis Stream pipeline (logwatch:ingest:logs, logwatch:ingest:traces)
+
+  fastify.all('/otlp-grpc', async (request, reply) => {
+    return reply.code(501).send({
+      statusCode: 501,
+      error: 'Not Implemented',
+      message: 'OTLP gRPC ingestion is not yet available. Use HTTP OTLP endpoints at /v1/ingest/otlp-logs and /v1/ingest/otlp-traces instead.',
+    });
+  });
 
   fastify.log.info('OTLP gRPC endpoint registered (stub — HTTP OTLP endpoints are active)');
 }

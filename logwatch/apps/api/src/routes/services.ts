@@ -69,6 +69,50 @@ export default async function servicesRoutes(fastify: FastifyInstance) {
     return reply.send(result.rows[0]);
   });
 
+  // GET /:id/baselines — get anomaly baselines for a service
+  fastify.get<{ Params: { id: string } }>('/:id/baselines', {
+    preHandler: requireViewer,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params;
+
+    // Verify the service exists and belongs to this tenant
+    const serviceResult = await fastify.pg.query(
+      'SELECT id, name FROM services WHERE id = $1 AND tenant_id = $2',
+      [id, request.tenantId],
+    );
+
+    if (serviceResult.rows.length === 0) {
+      return reply.code(404).send({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Service not found',
+      });
+    }
+
+    const baselinesResult = await fastify.pg.query(
+      `SELECT metric_name, baseline_mean, baseline_stddev, baseline_p50, baseline_p95, baseline_p99,
+              hourly_pattern, dow_pattern, sample_count, last_updated_at
+       FROM anomaly_baselines
+       WHERE tenant_id = $1 AND service_id = $2
+       ORDER BY metric_name`,
+      [request.tenantId, id],
+    );
+
+    return reply.send({
+      service: serviceResult.rows[0],
+      baselines: baselinesResult.rows,
+    });
+  });
+
   // GET /:id/dependencies — get service dependencies
   fastify.get<{ Params: { id: string } }>('/:id/dependencies', {
     preHandler: requireViewer,
