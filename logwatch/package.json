@@ -1,0 +1,18 @@
+{
+  "name": "logwatch",
+  "version": "0.1.0",
+  "private": true,
+  "description": "AI-native log aggregation and anomaly detection platform",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "test:e2e": "pnpm --filter @logwatch/web test:e2e"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}

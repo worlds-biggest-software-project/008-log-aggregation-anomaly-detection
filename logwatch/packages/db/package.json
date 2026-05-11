@@ -1,0 +1,26 @@
+{
+  "name": "@logwatch/db",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint src/",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "migrate": "node dist/postgres/migrate.js",
+    "migrate:create": "node dist/postgres/migrate-create.js",
+    "migrate:reset": "node dist/postgres/migrate-reset.js",
+    "clickhouse:setup": "node dist/clickhouse/setup.js"
+  },
+  "dependencies": {
+    "@clickhouse/client": "^1.0.0",
+    "pg": "^8.13.0"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.11.0"
+  }
+}
