@@ -1,0 +1,59 @@
+api:
+  replicaCount: 2
+  image:
+    repository: logwatch/api
+    tag: latest
+  port: 4000
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+anomalyEngine:
+  replicaCount: 1
+  image:
+    repository: logwatch/anomaly-engine
+    tag: latest
+  port: 8000
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+web:
+  replicaCount: 2
+  image:
+    repository: logwatch/web
+    tag: latest
+  port: 3000
+
+postgres:
+  enabled: true
+  auth:
+    database: logwatch
+    username: logwatch
+    password: logwatch
+
+clickhouse:
+  enabled: true
+
+redis:
+  enabled: true
+  architecture: standalone
+
+ingress:
+  enabled: false
+  className: nginx
+  hosts:
+    - host: logwatch.local
+      paths:
+        - path: /api
+          service: api
+        - path: /
+          service: web

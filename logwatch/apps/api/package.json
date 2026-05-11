@@ -20,6 +20,7 @@
     "fastify": "^4.28.0",
     "fastify-plugin": "^4.5.1",
     "ioredis": "^5.4.0",
+    "@anthropic-ai/sdk": "^0.39.0",
     "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {

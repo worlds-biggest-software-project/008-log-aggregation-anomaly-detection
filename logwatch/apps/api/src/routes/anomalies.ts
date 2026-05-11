@@ -277,4 +277,130 @@ export default async function anomaliesRoutes(fastify: FastifyInstance) {
 
     return reply.send({ baselines: baselinesResult.rows });
   });
+
+  // GET /:id/rca — get or generate RCA report for an anomaly
+  fastify.get<{ Params: { id: string } }>('/:id/rca', {
+    preHandler: requireViewer,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        },
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params;
+
+    const existing = await fastify.pg.query(
+      'SELECT * FROM rca_reports WHERE anomaly_id = $1 AND tenant_id = $2',
+      [id, request.tenantId],
+    );
+
+    if (existing.rows.length > 0) {
+      return reply.send(existing.rows[0]);
+    }
+
+    const anomalyCheck = await fastify.pg.query(
+      'SELECT id FROM anomalies WHERE id = $1 AND tenant_id = $2',
+      [id, request.tenantId],
+    );
+
+    if (anomalyCheck.rows.length === 0) {
+      return reply.code(404).send({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'Anomaly not found',
+      });
+    }
+
+    const insertResult = await fastify.pg.query(
+      `INSERT INTO rca_reports (tenant_id, anomaly_id, status)
+       VALUES ($1, $2, 'generating')
+       ON CONFLICT (tenant_id, anomaly_id) DO UPDATE SET status = 'generating'
+       RETURNING *`,
+      [request.tenantId, id],
+    );
+
+    const report = insertResult.rows[0];
+
+    (async () => {
+      try {
+        const { RCAEvidenceGatherer } = await import('../services/rca-evidence.js');
+        const { RCAGenerator } = await import('../services/rca-generator.js');
+
+        const gatherer = new RCAEvidenceGatherer(fastify.pg, fastify.clickhouse);
+        const generator = new RCAGenerator();
+
+        const evidence = await gatherer.gather(request.tenantId, id);
+        const result = await generator.generate(evidence);
+
+        await fastify.pg.query(
+          `UPDATE rca_reports
+           SET status = 'completed', narrative = $1, probable_cause = $2,
+               confidence = $3, prompt_tokens = $4, completion_tokens = $5,
+               generated_at = NOW()
+           WHERE id = $6 AND tenant_id = $7`,
+          [
+            result.narrative, result.probable_cause, result.confidence,
+            result.prompt_tokens, result.completion_tokens,
+            report.id, request.tenantId,
+          ],
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        await fastify.pg.query(
+          `UPDATE rca_reports SET status = 'failed', narrative = $1 WHERE id = $2 AND tenant_id = $3`,
+          [message, report.id, request.tenantId],
+        );
+      }
+    })();
+
+    return reply.send(report);
+  });
+
+  // POST /:id/rca/feedback — submit feedback on an RCA report
+  fastify.post<{ Params: { id: string } }>('/:id/rca/feedback', {
+    preHandler: requireEditor,
+    schema: {
+      params: {
+        type: 'object',
+        required: ['id'],
+        properties: {
+          id: { type: 'string', format: 'uuid' },
+        },
+      },
+      body: {
+        type: 'object',
+        required: ['feedback'],
+        properties: {
+          feedback: { type: 'string', enum: ['helpful', 'not_helpful', 'inaccurate'] },
+          comment: { type: 'string' },
+        },
+        additionalProperties: false,
+      },
+    },
+  }, async (request, reply) => {
+    const { id } = request.params;
+    const { feedback, comment } = request.body as { feedback: string; comment?: string };
+
+    const result = await fastify.pg.query(
+      `UPDATE rca_reports
+       SET user_feedback = $1, feedback_comment = $2
+       WHERE anomaly_id = $3 AND tenant_id = $4
+       RETURNING *`,
+      [feedback, comment ?? null, id, request.tenantId],
+    );
+
+    if (result.rows.length === 0) {
+      return reply.code(404).send({
+        statusCode: 404,
+        error: 'Not Found',
+        message: 'RCA report not found for this anomaly',
+      });
+    }
+
+    return reply.send(result.rows[0]);
+  });
 }
