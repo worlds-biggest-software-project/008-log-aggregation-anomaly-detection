@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LogWatch - AI-Native Log Observability Platform</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: #dbeafe;
+      --accent: #10b981;
+      --accent-dark: #059669;
+      --text: #1e293b;
+      --text-light: #64748b;
+      --bg: #ffffff;
+      --bg-alt: #f8fafc;
+      --bg-dark: #0f172a;
+      --border: #e2e8f0;
+      --radius: 12px;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    /* Navigation */
+    nav {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      background: rgba(255,255,255,0.95);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      padding: 0 2rem;
+    }
+    .nav-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .logo {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-decoration: none;
+    }
+    .logo span { color: var(--text); }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a {
+      text-decoration: none;
+      color: var(--text-light);
+      font-weight: 500;
+      font-size: 0.95rem;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--primary); }
+    .nav-cta {
+      background: var(--primary);
+      color: white !important;
+      padding: 0.5rem 1.25rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+    }
+    .nav-cta:hover { background: var(--primary-dark); }
+
+    /* Hero */
+    .hero {
+      padding: 10rem 2rem 6rem;
+      text-align: center;
+      background: linear-gradient(180deg, var(--primary-light) 0%, var(--bg) 100%);
+    }
+    .hero h1 {
+      font-size: 3.5rem;
+      font-weight: 800;
+      line-height: 1.15;
+      max-width: 800px;
+      margin: 0 auto 1.5rem;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .hero p {
+      font-size: 1.25rem;
+      color: var(--text-light);
+      max-width: 640px;
+      margin: 0 auto 2.5rem;
+    }
+    .hero-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+    .btn {
+      display: inline-block;
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 1rem;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+    .btn-secondary { background: white; color: var(--text); border: 2px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--primary); color: var(--primary); }
+
+    .hero-stats {
+      display: flex;
+      justify-content: center;
+      gap: 3rem;
+      margin-top: 4rem;
+      flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-number { font-size: 2rem; font-weight: 800; color: var(--primary); }
+    .stat-label { font-size: 0.85rem; color: var(--text-light); margin-top: 0.25rem; }
+
+    /* Sections */
+    section { padding: 6rem 2rem; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .section-header { text-align: center; margin-bottom: 4rem; }
+    .section-header h2 {
+      font-size: 2.25rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+    }
+    .section-header p {
+      font-size: 1.1rem;
+      color: var(--text-light);
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .section-tag {
+      display: inline-block;
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 0.35rem 1rem;
+      border-radius: 999px;
+      margin-bottom: 1rem;
+    }
+
+    /* Problem Section */
+    .problem { background: var(--bg-alt); }
+    .problem-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 2rem;
+    }
+    .problem-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+    }
+    .problem-card .icon {
+      width: 48px;
+      height: 48px;
+      background: #fef2f2;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .problem-card h3 { font-size: 1.15rem; margin-bottom: 0.5rem; }
+    .problem-card p { color: var(--text-light); font-size: 0.95rem; }
+    .problem-stat { font-weight: 700; color: #dc2626; }
+
+    /* Features */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 2rem;
+    }
+    .feature-card {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .feature-card:hover {
+      border-color: var(--primary);
+      box-shadow: 0 4px 16px rgba(37,99,235,0.08);
+    }
+    .feature-card .icon {
+      width: 48px;
+      height: 48px;
+      background: var(--primary-light);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .feature-card h3 { font-size: 1.15rem; margin-bottom: 0.5rem; }
+    .feature-card p { color: var(--text-light); font-size: 0.95rem; }
+
+    /* How It Works */
+    .how-it-works { background: var(--bg-alt); }
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 2rem;
+      counter-reset: step;
+    }
+    .step {
+      text-align: center;
+      padding: 2rem 1.5rem;
+    }
+    .step-number {
+      width: 56px;
+      height: 56px;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin: 0 auto 1.25rem;
+    }
+    .step h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .step p { color: var(--text-light); font-size: 0.9rem; }
+
+    /* Comparison */
+    .comparison-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+    .comparison-table th,
+    .comparison-table td {
+      padding: 1rem 1.25rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border);
+    }
+    .comparison-table th {
+      background: var(--bg-alt);
+      font-weight: 600;
+      position: sticky;
+      top: 64px;
+    }
+    .comparison-table td:first-child { font-weight: 500; }
+    .check { color: var(--accent); font-weight: 700; }
+    .cross { color: #dc2626; }
+    .partial { color: #f59e0b; }
+    .highlight-col { background: rgba(37,99,235,0.04); }
+    .table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+
+    /* Architecture */
+    .arch-diagram {
+      background: var(--bg-dark);
+      color: #e2e8f0;
+      border-radius: var(--radius);
+      padding: 2.5rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      overflow-x: auto;
+      white-space: pre;
+      margin-top: 2rem;
+    }
+
+    /* Use Cases */
+    .use-cases-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 2rem;
+    }
+    .use-case {
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2rem;
+      border-left: 4px solid var(--primary);
+    }
+    .use-case h3 { font-size: 1.05rem; margin-bottom: 0.5rem; }
+    .use-case .persona {
+      font-size: 0.85rem;
+      color: var(--primary);
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+    }
+    .use-case p { color: var(--text-light); font-size: 0.9rem; }
+
+    /* Pricing */
+    .pricing { background: var(--bg-alt); }
+    .pricing-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .pricing-card {
+      background: white;
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 2.5rem;
+    }
+    .pricing-card.featured { border-color: var(--primary); }
+    .pricing-card h3 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+    .pricing-card .price {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin: 1rem 0;
+    }
+    .pricing-card .price span { font-size: 1rem; font-weight: 400; color: var(--text-light); }
+    .pricing-card ul {
+      list-style: none;
+      margin: 1.5rem 0 2rem;
+    }
+    .pricing-card li {
+      padding: 0.4rem 0;
+      font-size: 0.95rem;
+      color: var(--text-light);
+    }
+    .pricing-card li::before {
+      content: "\2713  ";
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    /* CTA */
+    .cta {
+      background: var(--bg-dark);
+      color: white;
+      text-align: center;
+    }
+    .cta h2 {
+      font-size: 2.25rem;
+      margin-bottom: 1rem;
+    }
+    .cta p {
+      color: #94a3b8;
+      font-size: 1.1rem;
+      max-width: 500px;
+      margin: 0 auto 2rem;
+    }
+    .cta .btn-primary { background: var(--accent); }
+    .cta .btn-primary:hover { background: var(--accent-dark); }
+
+    /* Footer */
+    footer {
+      background: var(--bg-dark);
+      color: #94a3b8;
+      padding: 4rem 2rem 2rem;
+      border-top: 1px solid #1e293b;
+    }
+    .footer-grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 2fr repeat(3, 1fr);
+      gap: 3rem;
+    }
+    .footer-brand .logo { font-size: 1.25rem; }
+    .footer-brand p { margin-top: 1rem; font-size: 0.9rem; }
+    .footer-col h4 {
+      color: white;
+      font-size: 0.9rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+    .footer-col ul { list-style: none; }
+    .footer-col li { margin-bottom: 0.5rem; }
+    .footer-col a {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+    .footer-col a:hover { color: white; }
+    .footer-bottom {
+      max-width: 1200px;
+      margin: 3rem auto 0;
+      padding-top: 2rem;
+      border-top: 1px solid #1e293b;
+      font-size: 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    /* Code Block */
+    .code-block {
+      background: var(--bg-dark);
+      color: #e2e8f0;
+      border-radius: var(--radius);
+      padding: 1.5rem 2rem;
+      font-family: 'Courier New', monospace;
+      font-size: 0.9rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    .code-block .comment { color: #64748b; }
+    .code-block .cmd { color: var(--accent); }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .hero h1 { font-size: 2.25rem; }
+      .hero-stats { gap: 1.5rem; }
+      .nav-links { display: none; }
+      .footer-grid { grid-template-columns: 1fr 1fr; }
+      .steps { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav>
+  <div class="nav-inner">
+    <a href="#" class="logo">Log<span>Watch</span></a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#how-it-works">How It Works</a></li>
+      <li><a href="#comparison">Compare</a></li>
+      <li><a href="#pricing">Pricing</a></li>
+      <li><a href="user-guide-overview.html">Docs</a></li>
+      <li><a href="installation-guide.html" class="nav-cta">Get Started</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <span class="section-tag">Open Source &middot; Apache 2.0</span>
+  <h1>Stop drowning in logs.<br>Start seeing <em>what matters</em>.</h1>
+  <p>LogWatch is an AI-native observability platform that transforms raw logs into contextual insights &mdash; reducing alert fatigue by up to 85% and accelerating root-cause analysis from hours to seconds.</p>
+  <div class="hero-buttons">
+    <a href="installation-guide.html" class="btn btn-primary">Install LogWatch</a>
+    <a href="user-guide-overview.html" class="btn btn-secondary">Read the Docs</a>
+  </div>
+  <div class="hero-stats">
+    <div class="stat">
+      <div class="stat-number">100K</div>
+      <div class="stat-label">logs/sec ingestion</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">&lt;1s</div>
+      <div class="stat-label">search response</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">&lt;15%</div>
+      <div class="stat-label">false positive rate</div>
+    </div>
+    <div class="stat">
+      <div class="stat-number">5 min</div>
+      <div class="stat-label">anomaly detection</div>
+    </div>
+  </div>
+</section>
+
+<!-- Problem -->
+<section class="problem" id="problem">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">The Problem</span>
+      <h2>Log management is broken</h2>
+      <p>Your team is spending more time fighting the tools than fighting the fires.</p>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-card">
+        <div class="icon">&#x1F6A8;</div>
+        <h3>Alert Fatigue</h3>
+        <p>Statistical anomaly detection fires on volumetric changes without semantic understanding. Teams face <span class="problem-stat">54% false-positive rates</span>, causing real incidents to be missed.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">&#x1F50D;</div>
+        <h3>Query Language Barriers</h3>
+        <p>Complex query languages (SPL, KQL, LogQL) exclude developers who aren't observability specialists. Most engineers can't self-serve production investigations.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">&#x1F4B8;</div>
+        <h3>Cost Explosion</h3>
+        <p>Log volume drives storage bills faster than insights improve. Large organisations regularly spend <span class="problem-stat">$500K+/year</span> on commercial observability platforms.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">&#x23F3;</div>
+        <h3>Hours-Long Investigations</h3>
+        <p>No tool automatically traces a log anomaly back through distributed traces, metrics, and recent deployments to propose a root cause. Engineers investigate manually.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">&#x2699;</div>
+        <h3>Threshold Staleness</h3>
+        <p>Manual threshold configuration becomes obsolete as services evolve. SRE teams spend weeks per quarter re-tuning alert rules that should adapt automatically.</p>
+      </div>
+      <div class="problem-card">
+        <div class="icon">&#x1F512;</div>
+        <h3>Vendor Lock-In</h3>
+        <p>Switching from Datadog, Splunk, or New Relic requires re-instrumenting every service. Proprietary agents and data formats create inescapable dependency.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Features -->
+<section id="features">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Core Capabilities</span>
+      <h2>AI-native from the ground up</h2>
+      <p>Every feature is designed to reduce noise, accelerate investigation, and eliminate manual configuration.</p>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="icon">&#x1F9E0;</div>
+        <h3>Contextual Anomaly Detection</h3>
+        <p>Goes beyond statistical thresholds. LogWatch uses LogBERT and LLM-powered semantic analysis to distinguish genuinely novel error patterns from known-noisy sources &mdash; no threshold configuration required.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1F4AC;</div>
+        <h3>Natural-Language Querying</h3>
+        <p>Ask questions in plain English: <em>"What caused the spike in 5xx errors between 2pm and 3pm yesterday?"</em> LogWatch translates your question into an optimized query and explains the results.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1F50E;</div>
+        <h3>Automated Root-Cause Analysis</h3>
+        <p>When an anomaly is detected, LogWatch automatically correlates logs, traces, and recent deployments to generate a plain-language narrative explaining the probable cause with evidence.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x26A1;</div>
+        <h3>Sub-Second Log Search</h3>
+        <p>Full-text search across 7 days of logs with sub-second response times. Powered by ClickHouse columnar storage with bloom filter and token-based indexing.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1F517;</div>
+        <h3>Log-to-Trace Correlation</h3>
+        <p>Click any log entry to see the full distributed trace. W3C Trace Context support provides zero-configuration correlation for OpenTelemetry-instrumented services.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1F4CA;</div>
+        <h3>Cost Management</h3>
+        <p>Per-service volume tracking with AI-powered sampling recommendations. Identify high-volume, low-signal log patterns and reduce storage costs by 50% or more without losing operational visibility.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1F514;</div>
+        <h3>Smart Alert Routing</h3>
+        <p>Route alerts to Slack, PagerDuty, email, or custom webhooks with configurable cooldowns and maintenance windows. AI-calibrated thresholds adapt to your services' natural patterns.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1F310;</div>
+        <h3>OpenTelemetry-Native</h3>
+        <p>Built on OTLP from the start. Supports OpenTelemetry Collector, Fluent Bit, syslog (RFC 5424/3164), and direct HTTP ingestion. No proprietary agents, no lock-in.</p>
+      </div>
+      <div class="feature-card">
+        <div class="icon">&#x1F6E1;</div>
+        <h3>Multi-Tenant &amp; Secure</h3>
+        <p>Database-enforced tenant isolation with PostgreSQL RLS. RBAC with Viewer, Editor, and Admin roles. OAuth 2.0 / OIDC SSO integration. Ingestion-time redaction of sensitive data.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works" id="how-it-works">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">How It Works</span>
+      <h2>From raw logs to actionable insights in minutes</h2>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-number">1</div>
+        <h3>Connect Your Services</h3>
+        <p>Point your OpenTelemetry Collector, Fluent Bit, or application HTTP client at LogWatch's ingestion endpoint. No code changes needed for OTel-instrumented services.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">2</div>
+        <h3>Automatic Baseline Learning</h3>
+        <p>LogWatch immediately begins learning each service's normal behaviour. Basic statistical detection starts instantly; full AI-powered contextual detection activates after 7 days of data.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">3</div>
+        <h3>Search &amp; Investigate</h3>
+        <p>Use full-text search, filters, live tail, or plain-English questions to explore your logs. Click through to distributed traces to see the full request lifecycle.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">4</div>
+        <h3>Get Alerted on What Matters</h3>
+        <p>When genuinely novel issues emerge, LogWatch detects them, generates a root-cause report with evidence, and routes alerts to the right channels.</p>
+      </div>
+    </div>
+
+    <div class="code-block">
+<span class="comment"># Get LogWatch running in 3 commands</span>
+<span class="cmd">git clone</span> https://github.com/logwatch/logwatch.git && <span class="cmd">cd</span> logwatch
+<span class="cmd">docker compose up -d</span>
+<span class="cmd">pnpm install</span> && <span class="cmd">pnpm dev</span>
+    </div>
+  </div>
+</section>
+
+<!-- Comparison -->
+<section id="comparison">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Why LogWatch</span>
+      <h2>How LogWatch compares</h2>
+      <p>The only open-source platform that combines contextual anomaly detection, natural-language querying, and automated root-cause analysis.</p>
+    </div>
+    <div class="table-wrapper">
+      <table class="comparison-table">
+        <thead>
+          <tr>
+            <th>Capability</th>
+            <th class="highlight-col">LogWatch</th>
+            <th>Datadog</th>
+            <th>ELK / OpenSearch</th>
+            <th>Grafana Loki</th>
+            <th>SigNoz</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Full-text log search</td>
+            <td class="highlight-col"><span class="check">&#10003;</span> Sub-second</td>
+            <td><span class="check">&#10003;</span></td>
+            <td><span class="check">&#10003;</span></td>
+            <td><span class="partial">~</span> Slow (no index)</td>
+            <td><span class="check">&#10003;</span></td>
+          </tr>
+          <tr>
+            <td>Log-to-trace correlation</td>
+            <td class="highlight-col"><span class="check">&#10003;</span></td>
+            <td><span class="check">&#10003;</span></td>
+            <td><span class="partial">~</span> Via plugins</td>
+            <td><span class="partial">~</span> Via Tempo</td>
+            <td><span class="check">&#10003;</span></td>
+          </tr>
+          <tr>
+            <td>AI anomaly detection (no thresholds)</td>
+            <td class="highlight-col"><span class="check">&#10003;</span> Contextual</td>
+            <td><span class="check">&#10003;</span> Watchdog</td>
+            <td><span class="partial">~</span> X-Pack ML</td>
+            <td><span class="cross">&#10007;</span></td>
+            <td><span class="cross">&#10007;</span></td>
+          </tr>
+          <tr>
+            <td>Natural-language querying</td>
+            <td class="highlight-col"><span class="check">&#10003;</span> Built-in</td>
+            <td><span class="cross">&#10007;</span></td>
+            <td><span class="cross">&#10007;</span></td>
+            <td><span class="cross">&#10007;</span></td>
+            <td><span class="cross">&#10007;</span></td>
+          </tr>
+          <tr>
+            <td>Automated root-cause analysis</td>
+            <td class="highlight-col"><span class="check">&#10003;</span> AI-generated</td>
+            <td><span class="partial">~</span> Watchdog RCA</td>
+            <td><span class="cross">&#10007;</span></td>
+            <td><span class="cross">&#10007;</span></td>
+            <td><span class="cross">&#10007;</span></td>
+          </tr>
+          <tr>
+            <td>Cost management / sampling</td>
+            <td class="highlight-col"><span class="check">&#10003;</span> AI-recommended</td>
+            <td><span class="partial">~</span> Manual</td>
+            <td><span class="cross">&#10007;</span></td>
+            <td><span class="cross">&#10007;</span></td>
+            <td><span class="cross">&#10007;</span></td>
+          </tr>
+          <tr>
+            <td>OpenTelemetry-native</td>
+            <td class="highlight-col"><span class="check">&#10003;</span></td>
+            <td><span class="partial">~</span> Supported</td>
+            <td><span class="partial">~</span> Via collector</td>
+            <td><span class="partial">~</span> Via collector</td>
+            <td><span class="check">&#10003;</span></td>
+          </tr>
+          <tr>
+            <td>Self-hosted / open source</td>
+            <td class="highlight-col"><span class="check">&#10003;</span> Apache 2.0</td>
+            <td><span class="cross">&#10007;</span> SaaS only</td>
+            <td><span class="check">&#10003;</span></td>
+            <td><span class="check">&#10003;</span> AGPLv3</td>
+            <td><span class="check">&#10003;</span></td>
+          </tr>
+          <tr>
+            <td>Multi-tenant isolation</td>
+            <td class="highlight-col"><span class="check">&#10003;</span> DB-enforced</td>
+            <td><span class="check">&#10003;</span></td>
+            <td><span class="partial">~</span> Manual</td>
+            <td><span class="check">&#10003;</span></td>
+            <td><span class="partial">~</span> Limited</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- Architecture -->
+<section class="how-it-works">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Architecture</span>
+      <h2>Built for scale and reliability</h2>
+      <p>A hybrid ClickHouse + PostgreSQL architecture that handles 100K logs/sec while keeping operational costs low.</p>
+    </div>
+    <div class="arch-diagram">
+  Your Services                        LogWatch Platform
+  +-----------+                        +-----------------------------------------------+
+  | App (OTel)|---OTLP/HTTP---+        |                                               |
+  +-----------+               |        |  +----------+    +-----------+    +----------+ |
+  +-----------+               +------->|  | Fastify  |--->| ClickHouse|    |   Web UI | |
+  | Fluent Bit|---HTTP JSON---|        |  |   API    |    | (telemetry|    | (Next.js)| |
+  +-----------+               |        |  | Server   |--->|  storage) |    +----------+ |
+  +-----------+               |        |  +-----+----+    +-----------+                 |
+  | Syslog    |---RFC 5424----+        |        |                                       |
+  +-----------+                        |  +-----v----+    +-----------+                 |
+                                       |  |  Redis   |--->|  Anomaly  |                 |
+  CI/CD Pipelines                      |  | (buffer  |    |  Engine   |                 |
+  +-----------+                        |  |  + queue)|    | (Python   |                 |
+  |Deploy Hook|---Webhook------------->|  +----------+    |  FastAPI) |                 |
+  +-----------+                        |                  +-----+-----+                 |
+                                       |  +----------+         |                        |
+  Alert Channels                       |  |PostgreSQL|<--------+                        |
+  +-----------+                        |  |(ops data,|                                  |
+  |  Slack    |<-------Notifications---|  | alerts,  |                                  |
+  |  PagerDuty|                        |  | users)   |                                  |
+  |  Email    |                        |  +----------+                                  |
+  +-----------+                        +-----------------------------------------------+
+    </div>
+  </div>
+</section>
+
+<!-- Use Cases -->
+<section id="use-cases">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Use Cases</span>
+      <h2>Built for the people who fight production fires</h2>
+    </div>
+    <div class="use-cases-grid">
+      <div class="use-case">
+        <div class="persona">SRE / Platform Engineer</div>
+        <h3>Eliminate alert fatigue</h3>
+        <p>Stop waking up at 3 AM for known-noisy dependencies. LogWatch's contextual detection understands the difference between "new, never-seen error" and "the same flaky upstream we see every Tuesday." Configure zero thresholds.</p>
+      </div>
+      <div class="use-case">
+        <div class="persona">Backend Developer</div>
+        <h3>Debug without being a query expert</h3>
+        <p>Ask "why are checkout requests timing out?" in plain English instead of learning LogQL or KQL. Click from a log line straight to the distributed trace showing exactly which downstream service is slow.</p>
+      </div>
+      <div class="use-case">
+        <div class="persona">Engineering Manager</div>
+        <h3>Control observability costs</h3>
+        <p>See per-service, per-day ingestion volumes and estimated costs. Apply AI-recommended sampling to reduce storage costs for high-volume health-check logs &mdash; without losing visibility into real issues.</p>
+      </div>
+      <div class="use-case">
+        <div class="persona">DevOps / Incident Responder</div>
+        <h3>Root-cause analysis in seconds</h3>
+        <p>When an anomaly fires, LogWatch generates a narrative: "TimeoutError spike in payment-service started 3 minutes after deployment v2.3.1, which changed the Redis connection pool. p99 latency rose from 5ms to 2400ms."</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Pricing -->
+<section class="pricing" id="pricing">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-tag">Pricing</span>
+      <h2>Open source. Self-hosted. Your data stays yours.</h2>
+      <p>LogWatch is free to use under the Apache 2.0 licence. Cloud-managed options are coming soon.</p>
+    </div>
+    <div class="pricing-cards">
+      <div class="pricing-card featured">
+        <h3>Self-Hosted (Open Source)</h3>
+        <div class="price">Free<span> / forever</span></div>
+        <ul>
+          <li>All features included</li>
+          <li>Unlimited log ingestion</li>
+          <li>Unlimited users and tenants</li>
+          <li>AI anomaly detection</li>
+          <li>NL querying (bring your Claude API key)</li>
+          <li>Root-cause analysis</li>
+          <li>Community support via GitHub</li>
+          <li>Apache 2.0 licence</li>
+        </ul>
+        <a href="installation-guide.html" class="btn btn-primary" style="width: 100%; text-align: center;">Get Started</a>
+      </div>
+      <div class="pricing-card">
+        <h3>Cloud (Coming Soon)</h3>
+        <div class="price">TBD<span> / GB ingested</span></div>
+        <ul>
+          <li>Fully managed infrastructure</li>
+          <li>Automatic scaling</li>
+          <li>Global data residency options</li>
+          <li>SSO / SAML integration</li>
+          <li>SLA-backed uptime</li>
+          <li>Priority support</li>
+          <li>SOC 2 Type II</li>
+        </ul>
+        <a href="#" class="btn btn-secondary" style="width: 100%; text-align: center;">Join Waitlist</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <div class="container">
+    <h2>Ready to see what your logs are trying to tell you?</h2>
+    <p>Deploy LogWatch in minutes and start reducing alert noise today. Open source, self-hosted, no vendor lock-in.</p>
+    <div class="hero-buttons">
+      <a href="installation-guide.html" class="btn btn-primary">Install LogWatch</a>
+      <a href="user-guide-overview.html" class="btn btn-secondary" style="color: white; border-color: #475569;">Read the Docs</a>
+    </div>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <div class="footer-grid">
+    <div class="footer-brand">
+      <a href="#" class="logo">Log<span style="color:#e2e8f0">Watch</span></a>
+      <p>AI-native observability platform. Transform raw logs into contextual insights. Open source, self-hosted, built on OpenTelemetry.</p>
+    </div>
+    <div class="footer-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#comparison">Comparison</a></li>
+        <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#use-cases">Use Cases</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Documentation</h4>
+      <ul>
+        <li><a href="installation-guide.html">Installation Guide</a></li>
+        <li><a href="user-guide-overview.html">User Guide</a></li>
+        <li><a href="user-guide-technical.html">Technical Reference</a></li>
+        <li><a href="#">API Reference</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Community</h4>
+      <ul>
+        <li><a href="#">GitHub</a></li>
+        <li><a href="#">Discord</a></li>
+        <li><a href="#">Contributing</a></li>
+        <li><a href="#">Changelog</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>&copy; 2026 LogWatch. Apache 2.0 Licence.</span>
+    <span>Made for the teams that keep production running.</span>
+  </div>
+</footer>
+
+</body>
+</html>
